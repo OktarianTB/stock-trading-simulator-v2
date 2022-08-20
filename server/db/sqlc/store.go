@@ -9,7 +9,6 @@ import (
 type TradingTxResult struct {
 	User        User        `json:"user"`
 	Transaction Transaction `json:"transaction"`
-	StockEntry  Stock       `json:"stock_entry"`
 }
 
 type Store interface {
@@ -68,34 +67,6 @@ func (store *SQLStore) PurchaseTx(ctx context.Context, arg CreateTransactionPara
 		}
 
 		// Then updates balances as appropriate
-		_, err = q.GetStockForUser(ctx, GetStockForUserParams{
-			Username: arg.Username,
-			Ticker:   arg.Ticker,
-		})
-		if err != nil {
-			if err == sql.ErrNoRows {
-				result.StockEntry, err = q.CreateStockEntryForUser(ctx, CreateStockEntryForUserParams{
-					Username: arg.Username,
-					Ticker:   arg.Ticker,
-					Quantity: arg.Quantity,
-				})
-				if err != nil {
-					return err
-				}
-			}
-
-			return err
-		} else {
-			result.StockEntry, err = q.AddStockQuantityForUser(ctx, AddStockQuantityForUserParams{
-				Username: arg.Username,
-				Ticker:   arg.Ticker,
-				Quantity: arg.Quantity,
-			})
-			if err != nil {
-				return err
-			}
-		}
-
 		result.User, err = q.RemoveUserBalance(ctx, RemoveUserBalanceParams{
 			Username: arg.Username,
 			Amount:   amount,
@@ -104,7 +75,7 @@ func (store *SQLStore) PurchaseTx(ctx context.Context, arg CreateTransactionPara
 			return err
 		}
 
-		// Record transaction for reference
+		// Record transaction
 		result.Transaction, err = q.CreateTransaction(ctx, CreateTransactionParams{
 			Username: arg.Username,
 			Ticker:   arg.Ticker,
@@ -128,7 +99,7 @@ func (store *SQLStore) SellTx(ctx context.Context, arg CreateTransactionParams) 
 		var err error
 
 		// Check that the user has the required number of stocks in their portfolio
-		stock, err := q.GetStockForUser(ctx, GetStockForUserParams{
+		stock, err := q.GetStockQuantityForUser(ctx, GetStockQuantityForUserParams{
 			Username: arg.Username,
 			Ticker:   arg.Ticker,
 		})
@@ -136,20 +107,11 @@ func (store *SQLStore) SellTx(ctx context.Context, arg CreateTransactionParams) 
 			return err
 		}
 
-		if stock.Quantity < arg.Quantity {
+		if stock.TotalQuantity < arg.Quantity {
 			return fmt.Errorf("user does not have the required quantity of the stock %v", arg.Ticker)
 		}
 
 		// Then updates balances as appropriate
-		result.StockEntry, err = q.RemoveStockQuantityForUser(ctx, RemoveStockQuantityForUserParams{
-			Username: arg.Username,
-			Ticker:   arg.Ticker,
-			Quantity: arg.Quantity,
-		})
-		if err != nil {
-			return err
-		}
-
 		result.User, err = q.AddUserBalance(ctx, AddUserBalanceParams{
 			Username: arg.Username,
 			Amount:   arg.Price * float64(arg.Quantity),
@@ -158,7 +120,7 @@ func (store *SQLStore) SellTx(ctx context.Context, arg CreateTransactionParams) 
 			return err
 		}
 
-		// Record transaction for reference
+		// Record transaction
 		result.Transaction, err = q.CreateTransaction(ctx, CreateTransactionParams{
 			Username: arg.Username,
 			Ticker:   arg.Ticker,

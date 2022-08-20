@@ -9,17 +9,14 @@ import (
 )
 
 type Querier interface {
-	AddStockQuantityForUser(ctx context.Context, arg AddStockQuantityForUserParams) (Stock, error)
 	AddUserBalance(ctx context.Context, arg AddUserBalanceParams) (User, error)
-	CreateStockEntryForUser(ctx context.Context, arg CreateStockEntryForUserParams) (Stock, error)
 	CreateTransaction(ctx context.Context, arg CreateTransactionParams) (Transaction, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
-	GetStockForUser(ctx context.Context, arg GetStockForUserParams) (Stock, error)
+	GetStockQuantityForUser(ctx context.Context, arg GetStockQuantityForUserParams) (GetStockQuantityForUserRow, error)
 	GetUser(ctx context.Context, username string) (User, error)
+	ListStockQuantitiesForUser(ctx context.Context, username string) ([]ListStockQuantitiesForUserRow, error)
 	ListTransactionsForUser(ctx context.Context, dollar_1 interface{}) ([]Transaction, error)
 	ListTransactionsForUserForTicker(ctx context.Context, arg ListTransactionsForUserForTickerParams) ([]Transaction, error)
-	ListUserStocks(ctx context.Context, username string) ([]Stock, error)
-	RemoveStockQuantityForUser(ctx context.Context, arg RemoveStockQuantityForUserParams) (Stock, error)
 	RemoveUserBalance(ctx context.Context, arg RemoveUserBalanceParams) (User, error)
 }
 

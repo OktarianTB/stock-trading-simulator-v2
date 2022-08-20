@@ -8,12 +8,6 @@ import (
 	"time"
 )
 
-type Stock struct {
-	Username string `json:"username"`
-	Ticker   string `json:"ticker"`
-	Quantity int64  `json:"quantity"`
-}
-
 type Transaction struct {
 	ID       int64  `json:"id"`
 	Username string `json:"username"`

@@ -46,11 +46,71 @@ func (q *Queries) CreateTransaction(ctx context.Context, arg CreateTransactionPa
 	return i, err
 }
 
+const getStockQuantityForUser = `-- name: GetStockQuantityForUser :one
+SELECT username, ticker, SUM(quantity) as total_quantity FROM transactions
+WHERE username = $1 AND ticker = $2 GROUP BY username, ticker LIMIT 1
+`
+
+type GetStockQuantityForUserParams struct {
+	Username string `json:"username"`
+	Ticker   string `json:"ticker"`
+}
+
+type GetStockQuantityForUserRow struct {
+	Username      string `json:"username"`
+	Ticker        string `json:"ticker"`
+	TotalQuantity int64  `json:"total_quantity"`
+}
+
+func (q *Queries) GetStockQuantityForUser(ctx context.Context, arg GetStockQuantityForUserParams) (GetStockQuantityForUserRow, error) {
+	row := q.db.QueryRowContext(ctx, getStockQuantityForUser, arg.Username, arg.Ticker)
+	var i GetStockQuantityForUserRow
+	err := row.Scan(&i.Username, &i.Ticker, &i.TotalQuantity)
+	return i, err
+}
+
+const listStockQuantitiesForUser = `-- name: ListStockQuantitiesForUser :many
+SELECT username, ticker, SUM(quantity) FROM transactions
+WHERE username = $1
+GROUP BY username, ticker
+ORDER BY ticker
+`
+
+type ListStockQuantitiesForUserRow struct {
+	Username string `json:"username"`
+	Ticker   string `json:"ticker"`
+	Sum      int64  `json:"sum"`
+}
+
+func (q *Queries) ListStockQuantitiesForUser(ctx context.Context, username string) ([]ListStockQuantitiesForUserRow, error) {
+	rows, err := q.db.QueryContext(ctx, listStockQuantitiesForUser, username)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListStockQuantitiesForUserRow{}
+	for rows.Next() {
+		var i ListStockQuantitiesForUserRow
+		if err := rows.Scan(&i.Username, &i.Ticker, &i.Sum); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listTransactionsForUser = `-- name: ListTransactionsForUser :many
 SELECT id, username, ticker, quantity, price, created_at FROM transactions
 WHERE 
     user = $1
 ORDER BY created_at DESC
+FOR NO KEY UPDATE
 `
 
 func (q *Queries) ListTransactionsForUser(ctx context.Context, dollar_1 interface{}) ([]Transaction, error) {
@@ -89,6 +149,7 @@ WHERE
     user = $1 AND
     ticker = $2
 ORDER BY created_at DESC
+FOR NO KEY UPDATE
 `
 
 type ListTransactionsForUserForTickerParams struct {

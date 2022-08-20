@@ -1,2 +1,0 @@
-ALTER TABLE IF EXISTS "stocks" DROP CONSTRAINT IF EXISTS "stocks_username_fkey";
-DROP TABLE IF EXISTS stocks;
