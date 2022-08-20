@@ -9,6 +9,31 @@ import (
 	"context"
 )
 
+const addUserBalance = `-- name: AddUserBalance :one
+UPDATE users
+SET balance = balance + $1
+WHERE username = $2
+RETURNING username, hashed_password, created_at, password_changed_at, balance
+`
+
+type AddUserBalanceParams struct {
+	Amount   float64 `json:"amount"`
+	Username string  `json:"username"`
+}
+
+func (q *Queries) AddUserBalance(ctx context.Context, arg AddUserBalanceParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, addUserBalance, arg.Amount, arg.Username)
+	var i User
+	err := row.Scan(
+		&i.Username,
+		&i.HashedPassword,
+		&i.CreatedAt,
+		&i.PasswordChangedAt,
+		&i.Balance,
+	)
+	return i, err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
   username,
@@ -43,6 +68,31 @@ WHERE username = $1 LIMIT 1
 
 func (q *Queries) GetUser(ctx context.Context, username string) (User, error) {
 	row := q.db.QueryRowContext(ctx, getUser, username)
+	var i User
+	err := row.Scan(
+		&i.Username,
+		&i.HashedPassword,
+		&i.CreatedAt,
+		&i.PasswordChangedAt,
+		&i.Balance,
+	)
+	return i, err
+}
+
+const removeUserBalance = `-- name: RemoveUserBalance :one
+UPDATE users
+SET balance = balance - $1
+WHERE username = $2
+RETURNING username, hashed_password, created_at, password_changed_at, balance
+`
+
+type RemoveUserBalanceParams struct {
+	Amount   float64 `json:"amount"`
+	Username string  `json:"username"`
+}
+
+func (q *Queries) RemoveUserBalance(ctx context.Context, arg RemoveUserBalanceParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, removeUserBalance, arg.Amount, arg.Username)
 	var i User
 	err := row.Scan(
 		&i.Username,

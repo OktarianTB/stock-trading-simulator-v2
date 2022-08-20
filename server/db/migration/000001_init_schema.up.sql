@@ -3,7 +3,7 @@ CREATE TABLE "users" (
   "hashed_password" varchar NOT NULL,
   "created_at" timestamptz NOT NULL DEFAULT (now()),
   "password_changed_at" timestamptz NOT NULL DEFAULT (now()),
-  "balance" bigint NOT NULL DEFAULT 100000
+  "balance" float NOT NULL DEFAULT 100000
 );
 
 CREATE TABLE "transactions" (

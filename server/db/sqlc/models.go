@@ -8,6 +8,12 @@ import (
 	"time"
 )
 
+type Stock struct {
+	Username string `json:"username"`
+	Ticker   string `json:"ticker"`
+	Quantity int64  `json:"quantity"`
+}
+
 type Transaction struct {
 	ID       int64  `json:"id"`
 	Username string `json:"username"`
@@ -23,5 +29,5 @@ type User struct {
 	HashedPassword    string    `json:"hashed_password"`
 	CreatedAt         time.Time `json:"created_at"`
 	PasswordChangedAt time.Time `json:"password_changed_at"`
-	Balance           int64     `json:"balance"`
+	Balance           float64   `json:"balance"`
 }
