@@ -36,4 +36,7 @@ test:
 server:
 	go run main.go
 
-.PHONY: network postgres postgreslogin createdb dropdb migrateup migrateup1 migratedown migratedown1 sqlc test server 
+mock:
+	mockgen -package mockdb -destination db/mock/store.go github.com/OktarianTB/stock-trading-simulator-golang/db/sqlc Store
+
+.PHONY: network postgres postgreslogin createdb dropdb migrateup migrateup1 migratedown migratedown1 sqlc test server mock

@@ -6,12 +6,16 @@ package db
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 type Querier interface {
 	AddUserBalance(ctx context.Context, arg AddUserBalanceParams) (User, error)
+	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateTransaction(ctx context.Context, arg CreateTransactionParams) (Transaction, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	GetSession(ctx context.Context, id uuid.UUID) (Session, error)
 	GetStockQuantityForUser(ctx context.Context, arg GetStockQuantityForUserParams) (GetStockQuantityForUserRow, error)
 	GetUser(ctx context.Context, username string) (User, error)
 	ListStockQuantitiesForUser(ctx context.Context, username string) ([]ListStockQuantitiesForUserRow, error)
