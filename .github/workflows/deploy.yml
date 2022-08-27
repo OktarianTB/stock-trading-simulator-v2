@@ -13,7 +13,9 @@ jobs:
   build:
     name: Build image
     runs-on: ubuntu-latest
-  
+    defaults:
+      run:
+        working-directory: ./server
     steps:
       - name: Checkout out code
         uses: actions/checkout@v3
