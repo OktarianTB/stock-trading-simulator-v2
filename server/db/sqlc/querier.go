@@ -19,7 +19,7 @@ type Querier interface {
 	GetStockQuantityForUser(ctx context.Context, arg GetStockQuantityForUserParams) (GetStockQuantityForUserRow, error)
 	GetUser(ctx context.Context, username string) (User, error)
 	ListStockQuantitiesForUser(ctx context.Context, username string) ([]ListStockQuantitiesForUserRow, error)
-	ListTransactionsForUser(ctx context.Context, dollar_1 interface{}) ([]Transaction, error)
+	ListTransactionsForUser(ctx context.Context, arg ListTransactionsForUserParams) ([]Transaction, error)
 	ListTransactionsForUserForTicker(ctx context.Context, arg ListTransactionsForUserForTickerParams) ([]Transaction, error)
 	RemoveUserBalance(ctx context.Context, arg RemoveUserBalanceParams) (User, error)
 }

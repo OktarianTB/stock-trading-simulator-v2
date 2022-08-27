@@ -11,20 +11,21 @@ INSERT INTO transactions (
 -- name: ListTransactionsForUser :many
 SELECT * FROM transactions
 WHERE 
-    user = $1
+    username = $1
 ORDER BY created_at DESC
-FOR NO KEY UPDATE;
+LIMIT $2
+OFFSET $3;
 
 -- name: ListTransactionsForUserForTicker :many
 SELECT * FROM transactions
 WHERE 
-    user = $1 AND
+    username = $1 AND
     ticker = $2
 ORDER BY created_at DESC
 FOR NO KEY UPDATE;
 
 -- name: ListStockQuantitiesForUser :many
-SELECT username, ticker, SUM(quantity) FROM transactions
+SELECT ticker, SUM(quantity) FROM transactions
 WHERE username = $1
 GROUP BY username, ticker
 ORDER BY ticker;

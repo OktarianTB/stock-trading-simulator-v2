@@ -70,16 +70,15 @@ func (q *Queries) GetStockQuantityForUser(ctx context.Context, arg GetStockQuant
 }
 
 const listStockQuantitiesForUser = `-- name: ListStockQuantitiesForUser :many
-SELECT username, ticker, SUM(quantity) FROM transactions
+SELECT ticker, SUM(quantity) FROM transactions
 WHERE username = $1
 GROUP BY username, ticker
 ORDER BY ticker
 `
 
 type ListStockQuantitiesForUserRow struct {
-	Username string `json:"username"`
-	Ticker   string `json:"ticker"`
-	Sum      int64  `json:"sum"`
+	Ticker string `json:"ticker"`
+	Sum    int64  `json:"sum"`
 }
 
 func (q *Queries) ListStockQuantitiesForUser(ctx context.Context, username string) ([]ListStockQuantitiesForUserRow, error) {
@@ -91,7 +90,7 @@ func (q *Queries) ListStockQuantitiesForUser(ctx context.Context, username strin
 	items := []ListStockQuantitiesForUserRow{}
 	for rows.Next() {
 		var i ListStockQuantitiesForUserRow
-		if err := rows.Scan(&i.Username, &i.Ticker, &i.Sum); err != nil {
+		if err := rows.Scan(&i.Ticker, &i.Sum); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -108,13 +107,20 @@ func (q *Queries) ListStockQuantitiesForUser(ctx context.Context, username strin
 const listTransactionsForUser = `-- name: ListTransactionsForUser :many
 SELECT id, username, ticker, quantity, price, created_at FROM transactions
 WHERE 
-    user = $1
+    username = $1
 ORDER BY created_at DESC
-FOR NO KEY UPDATE
+LIMIT $2
+OFFSET $3
 `
 
-func (q *Queries) ListTransactionsForUser(ctx context.Context, dollar_1 interface{}) ([]Transaction, error) {
-	rows, err := q.db.QueryContext(ctx, listTransactionsForUser, dollar_1)
+type ListTransactionsForUserParams struct {
+	Username string `json:"username"`
+	Limit    int32  `json:"limit"`
+	Offset   int32  `json:"offset"`
+}
+
+func (q *Queries) ListTransactionsForUser(ctx context.Context, arg ListTransactionsForUserParams) ([]Transaction, error) {
+	rows, err := q.db.QueryContext(ctx, listTransactionsForUser, arg.Username, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -146,19 +152,19 @@ func (q *Queries) ListTransactionsForUser(ctx context.Context, dollar_1 interfac
 const listTransactionsForUserForTicker = `-- name: ListTransactionsForUserForTicker :many
 SELECT id, username, ticker, quantity, price, created_at FROM transactions
 WHERE 
-    user = $1 AND
+    username = $1 AND
     ticker = $2
 ORDER BY created_at DESC
 FOR NO KEY UPDATE
 `
 
 type ListTransactionsForUserForTickerParams struct {
-	Column1 interface{} `json:"column_1"`
-	Ticker  string      `json:"ticker"`
+	Username string `json:"username"`
+	Ticker   string `json:"ticker"`
 }
 
 func (q *Queries) ListTransactionsForUserForTicker(ctx context.Context, arg ListTransactionsForUserForTickerParams) ([]Transaction, error) {
-	rows, err := q.db.QueryContext(ctx, listTransactionsForUserForTicker, arg.Column1, arg.Ticker)
+	rows, err := q.db.QueryContext(ctx, listTransactionsForUserForTicker, arg.Username, arg.Ticker)
 	if err != nil {
 		return nil, err
 	}

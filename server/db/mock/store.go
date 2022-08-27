@@ -157,7 +157,7 @@ func (mr *MockStoreMockRecorder) ListStockQuantitiesForUser(arg0, arg1 interface
 }
 
 // ListTransactionsForUser mocks base method.
-func (m *MockStore) ListTransactionsForUser(arg0 context.Context, arg1 interface{}) ([]db.Transaction, error) {
+func (m *MockStore) ListTransactionsForUser(arg0 context.Context, arg1 db.ListTransactionsForUserParams) ([]db.Transaction, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListTransactionsForUser", arg0, arg1)
 	ret0, _ := ret[0].([]db.Transaction)
