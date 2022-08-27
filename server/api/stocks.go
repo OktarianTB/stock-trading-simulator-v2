@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"net/http"
+	"sync"
 	"time"
 
 	db "github.com/OktarianTB/stock-trading-simulator-golang/db/sqlc"
@@ -35,35 +36,43 @@ func (server *Server) listUserStocks(ctx *gin.Context) {
 	}
 
 	var result listUserStocksResponse
+	wg := sync.WaitGroup{}
 
 	for _, s := range stocks {
-		price, err := server.getStockPriceForTicker(s.Ticker)
-		if err != nil {
-			errResponse := errors.New("unable to get stocks for user")
-			ctx.JSON(http.StatusInternalServerError, errorResponse(errResponse))
-			return
-		}
-		balance := price * float64(s.Quantity)
+		wg.Add(1)
+		go func(s db.ListStockQuantitiesForUserRow) {
+			price, err := server.getStockPriceForTicker(s.Ticker)
+			if err != nil {
+				errResponse := errors.New("unable to get stocks for user")
+				ctx.JSON(http.StatusInternalServerError, errorResponse(errResponse))
+				return
+			}
+			balance := price * float64(s.Quantity)
+	
+			purchaseTotal, err := server.store.GetPurchasePriceForTicker(ctx, db.GetPurchasePriceForTickerParams{
+				Username: authPayload.Username,
+				Ticker:   s.Ticker,
+			})
+			if err != nil {
+				errResponse := errors.New("unable to get stocks for user")
+				ctx.JSON(http.StatusInternalServerError, errorResponse(errResponse))
+				return
+			}
+	
+			result.Stocks = append(result.Stocks, stock{
+				Ticker:         s.Ticker,
+				Quantity:       s.Quantity,
+				CurrentPrice:   price,
+				CurrentBalance: util.RoundFloat(balance),
+				PurchaseTotal:  util.RoundFloat(purchaseTotal),
+			})
+			result.PortfolioBalance += balance
 
-		purchaseTotal, err := server.store.GetPurchasePriceForTicker(ctx, db.GetPurchasePriceForTickerParams{
-			Username: authPayload.Username,
-			Ticker:   s.Ticker,
-		})
-		if err != nil {
-			errResponse := errors.New("unable to get stocks for user")
-			ctx.JSON(http.StatusInternalServerError, errorResponse(errResponse))
-			return
-		}
-
-		result.Stocks = append(result.Stocks, stock{
-			Ticker:         s.Ticker,
-			Quantity:       s.Quantity,
-			CurrentPrice:   price,
-			CurrentBalance: util.RoundFloat(balance),
-			PurchaseTotal:  util.RoundFloat(purchaseTotal),
-		})
-		result.PortfolioBalance += balance
+			wg.Done()
+		}(s)
 	}
+
+	wg.Wait()
 
 	result.PortfolioBalance = util.RoundFloat(result.PortfolioBalance)
 
