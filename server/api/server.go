@@ -22,7 +22,7 @@ func NewServer(config util.Config, store db.Store) (*Server, error) {
 		return nil, fmt.Errorf("cannot create token maker: %v", err)
 	}
 	server := &Server{
-		config:      config,
+		config:     config,
 		store:      store,
 		tokenMaker: tokenMaker,
 	}

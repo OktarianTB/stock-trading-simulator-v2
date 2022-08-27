@@ -15,6 +15,7 @@ type Querier interface {
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateTransaction(ctx context.Context, arg CreateTransactionParams) (Transaction, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	GetPurchasePriceForTicker(ctx context.Context, arg GetPurchasePriceForTickerParams) (float64, error)
 	GetSession(ctx context.Context, id uuid.UUID) (Session, error)
 	GetStockQuantityForUser(ctx context.Context, arg GetStockQuantityForUserParams) (GetStockQuantityForUserRow, error)
 	GetUser(ctx context.Context, username string) (User, error)

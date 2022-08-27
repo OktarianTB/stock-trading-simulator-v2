@@ -25,8 +25,14 @@ ORDER BY created_at DESC
 LIMIT $3
 OFFSET $4;
 
+-- name: GetPurchasePriceForTicker :one
+SELECT SUM(price * quantity)::float as purchase_price FROM transactions
+WHERE 
+    username = $1 AND
+    ticker = $2;
+
 -- name: ListStockQuantitiesForUser :many
-SELECT ticker, SUM(quantity) FROM transactions
+SELECT ticker, SUM(quantity) as quantity FROM transactions
 WHERE username = $1
 GROUP BY username, ticker
 ORDER BY ticker;
