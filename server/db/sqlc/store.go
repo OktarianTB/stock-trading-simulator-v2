@@ -104,6 +104,9 @@ func (store *SQLStore) SellTx(ctx context.Context, arg CreateTransactionParams) 
 			Ticker:   arg.Ticker,
 		})
 		if err != nil {
+			if err == sql.ErrNoRows {
+				return fmt.Errorf("user does not have the required quantity of the stock %v", arg.Ticker)
+			}
 			return err
 		}
 

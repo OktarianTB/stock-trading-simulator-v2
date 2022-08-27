@@ -27,7 +27,7 @@ func createPurchaseTransaction(t *testing.T, username, ticker string, quantity i
 	return transaction
 }
 
-func TestCreateTramsaction(t *testing.T) {
+func TestCreateTransaction(t *testing.T) {
 	user := createRandomUser(t)
 	createPurchaseTransaction(t, user.Username, util.RandomString(4), util.RandomInt(-10, 10))
 }
