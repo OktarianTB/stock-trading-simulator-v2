@@ -17,6 +17,7 @@ type Config struct {
 	RefreshTokenDuration time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
 	TiingoAPI            string        `mapstructure:"TIINGO_API"`
 	TiingoToken          string        `mapstructure:"TIINGO_TOKEN"`
+	MigrationURL         string        `mapstructure:"MIGRATION_URL"`
 }
 
 // LoadConfig loads the configuration from a config file

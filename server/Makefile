@@ -4,16 +4,16 @@ network:
 	docker network create stock-trading-simulator-network
 
 postgres:
-	docker run --name postgres14 --network stock-trading-simulator-network -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres:14.4-alpine
+	docker run --name postgres --network stock-trading-simulator-network -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres:14.4-alpine
 
 postgreslogin:
-	docker exec -it postgres14 psql -U root -d stock_trading_simulator
+	docker exec -it postgres psql -U root -d stock_trading_simulator
 
 createdb:
-	docker exec -it postgres14 createdb --username=root --owner=root stock_trading_simulator
+	docker exec -it postgres createdb --username=root --owner=root stock_trading_simulator
 
 dropdb:
-	docker exec -it postgres14 dropdb stock_trading_simulator
+	docker exec -it postgres dropdb stock_trading_simulator
 
 migrateup:
 	migrate -path db/migration -database "$(DB_URL)" -verbose up
@@ -39,4 +39,7 @@ server:
 mock:
 	mockgen -package mockdb -destination db/mock/store.go github.com/OktarianTB/stock-trading-simulator-golang/db/sqlc Store
 
-.PHONY: network postgres postgreslogin createdb dropdb migrateup migrateup1 migratedown migratedown1 sqlc test server mock
+dockerserver:
+	docker run --name stock-trading-simulator --network stock-trading-simulator-network -p 8080:8080 -e GIN_MODE=release -e DB_SOURCE="postgresql://root:secret@postgres14:5432/stock_trading_simulator?sslmode=disable" stock-trading-simulator:latest
+
+.PHONY: network postgres postgreslogin createdb dropdb migrateup migrateup1 migratedown migratedown1 sqlc test server mock dockerserver
