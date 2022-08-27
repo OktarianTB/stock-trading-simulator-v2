@@ -155,16 +155,24 @@ WHERE
     username = $1 AND
     ticker = $2
 ORDER BY created_at DESC
-FOR NO KEY UPDATE
+LIMIT $3
+OFFSET $4
 `
 
 type ListTransactionsForUserForTickerParams struct {
 	Username string `json:"username"`
 	Ticker   string `json:"ticker"`
+	Limit    int32  `json:"limit"`
+	Offset   int32  `json:"offset"`
 }
 
 func (q *Queries) ListTransactionsForUserForTicker(ctx context.Context, arg ListTransactionsForUserForTickerParams) ([]Transaction, error) {
-	rows, err := q.db.QueryContext(ctx, listTransactionsForUserForTicker, arg.Username, arg.Ticker)
+	rows, err := q.db.QueryContext(ctx, listTransactionsForUserForTicker,
+		arg.Username,
+		arg.Ticker,
+		arg.Limit,
+		arg.Offset,
+	)
 	if err != nil {
 		return nil, err
 	}

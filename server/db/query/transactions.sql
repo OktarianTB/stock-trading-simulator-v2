@@ -22,7 +22,8 @@ WHERE
     username = $1 AND
     ticker = $2
 ORDER BY created_at DESC
-FOR NO KEY UPDATE;
+LIMIT $3
+OFFSET $4;
 
 -- name: ListStockQuantitiesForUser :many
 SELECT ticker, SUM(quantity) FROM transactions
