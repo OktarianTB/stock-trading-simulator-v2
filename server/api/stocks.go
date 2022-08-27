@@ -45,7 +45,7 @@ func (server *Server) listUserStocks(ctx *gin.Context) {
 		}
 		balance := price * float64(s.Quantity)
 
-		tickerTransactions, err := server.store.ListTransactionsForUserForTicker(ctx, db.ListTransactionsForUserForTickerParams{
+		purchaseTotal, err := server.store.GetPurchasePriceForTicker(ctx, db.GetPurchasePriceForTickerParams{
 			Username: authPayload.Username,
 			Ticker:   s.Ticker,
 		})
@@ -60,7 +60,7 @@ func (server *Server) listUserStocks(ctx *gin.Context) {
 			Quantity:       s.Quantity,
 			CurrentPrice:   price,
 			CurrentBalance: util.RoundFloat(balance),
-			PurchaseTotal:  server.getPurchasePrice(tickerTransactions),
+			PurchaseTotal:  util.RoundFloat(purchaseTotal),
 		})
 		result.PortfolioBalance += balance
 	}
@@ -68,16 +68,6 @@ func (server *Server) listUserStocks(ctx *gin.Context) {
 	result.PortfolioBalance = util.RoundFloat(result.PortfolioBalance)
 
 	ctx.JSON(http.StatusOK, result)
-}
-
-func (server *Server) getPurchasePrice(transactions []db.Transaction) float64 {
-	var total float64
-
-	for _, tx := range transactions {
-		total += tx.Price * float64(tx.Quantity)
-	}
-
-	return util.RoundFloat(total)
 }
 
 type tiingoStock struct {

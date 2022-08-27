@@ -96,6 +96,21 @@ func (mr *MockStoreMockRecorder) CreateUser(arg0, arg1 interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockStore)(nil).CreateUser), arg0, arg1)
 }
 
+// GetPurchasePriceForTicker mocks base method.
+func (m *MockStore) GetPurchasePriceForTicker(arg0 context.Context, arg1 db.GetPurchasePriceForTickerParams) (float64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPurchasePriceForTicker", arg0, arg1)
+	ret0, _ := ret[0].(float64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPurchasePriceForTicker indicates an expected call of GetPurchasePriceForTicker.
+func (mr *MockStoreMockRecorder) GetPurchasePriceForTicker(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPurchasePriceForTicker", reflect.TypeOf((*MockStore)(nil).GetPurchasePriceForTicker), arg0, arg1)
+}
+
 // GetSession mocks base method.
 func (m *MockStore) GetSession(arg0 context.Context, arg1 uuid.UUID) (db.Session, error) {
 	m.ctrl.T.Helper()

@@ -46,6 +46,25 @@ func (q *Queries) CreateTransaction(ctx context.Context, arg CreateTransactionPa
 	return i, err
 }
 
+const getPurchasePriceForTicker = `-- name: GetPurchasePriceForTicker :one
+SELECT SUM(price * quantity)::float as purchase_price FROM transactions
+WHERE 
+    username = $1 AND
+    ticker = $2
+`
+
+type GetPurchasePriceForTickerParams struct {
+	Username string `json:"username"`
+	Ticker   string `json:"ticker"`
+}
+
+func (q *Queries) GetPurchasePriceForTicker(ctx context.Context, arg GetPurchasePriceForTickerParams) (float64, error) {
+	row := q.db.QueryRowContext(ctx, getPurchasePriceForTicker, arg.Username, arg.Ticker)
+	var purchase_price float64
+	err := row.Scan(&purchase_price)
+	return purchase_price, err
+}
+
 const getStockQuantityForUser = `-- name: GetStockQuantityForUser :one
 SELECT username, ticker, SUM(quantity) as total_quantity FROM transactions
 WHERE username = $1 AND ticker = $2 GROUP BY username, ticker LIMIT 1
