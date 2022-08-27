@@ -70,15 +70,15 @@ func (q *Queries) GetStockQuantityForUser(ctx context.Context, arg GetStockQuant
 }
 
 const listStockQuantitiesForUser = `-- name: ListStockQuantitiesForUser :many
-SELECT ticker, SUM(quantity) FROM transactions
+SELECT ticker, SUM(quantity) as quantity FROM transactions
 WHERE username = $1
 GROUP BY username, ticker
 ORDER BY ticker
 `
 
 type ListStockQuantitiesForUserRow struct {
-	Ticker string `json:"ticker"`
-	Sum    int64  `json:"sum"`
+	Ticker   string `json:"ticker"`
+	Quantity int64  `json:"quantity"`
 }
 
 func (q *Queries) ListStockQuantitiesForUser(ctx context.Context, username string) ([]ListStockQuantitiesForUserRow, error) {
@@ -90,7 +90,7 @@ func (q *Queries) ListStockQuantitiesForUser(ctx context.Context, username strin
 	items := []ListStockQuantitiesForUserRow{}
 	for rows.Next() {
 		var i ListStockQuantitiesForUserRow
-		if err := rows.Scan(&i.Ticker, &i.Sum); err != nil {
+		if err := rows.Scan(&i.Ticker, &i.Quantity); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

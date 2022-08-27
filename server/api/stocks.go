@@ -5,10 +5,24 @@ import (
 	"net/http"
 	"time"
 
+	db "github.com/OktarianTB/stock-trading-simulator-golang/db/sqlc"
 	"github.com/OktarianTB/stock-trading-simulator-golang/token"
 	util "github.com/OktarianTB/stock-trading-simulator-golang/utils"
 	"github.com/gin-gonic/gin"
 )
+
+type stock struct {
+	Ticker         string  `json:"ticker"`
+	Quantity       int64   `json:"quantity"`
+	CurrentPrice   float64 `json:"current_price"`
+	CurrentBalance float64 `json:"current_balance"`
+	PurchaseTotal  float64 `json:"purchase_total"`
+}
+
+type listUserStocksResponse struct {
+	PortfolioBalance float64 `json:"portfolio_balance"`
+	Stocks           []stock `json:"stocks"`
+}
 
 func (server *Server) listUserStocks(ctx *gin.Context) {
 	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
@@ -20,10 +34,53 @@ func (server *Server) listUserStocks(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, stocks)
+	var result listUserStocksResponse
+
+	for _, s := range stocks {
+		price, err := server.getStockPriceForTicker(s.Ticker)
+		if err != nil {
+			errResponse := errors.New("unable to get stocks for user")
+			ctx.JSON(http.StatusInternalServerError, errorResponse(errResponse))
+			return
+		}
+		balance := price * float64(s.Quantity)
+
+		tickerTransactions, err := server.store.ListTransactionsForUserForTicker(ctx, db.ListTransactionsForUserForTickerParams{
+			Username: authPayload.Username,
+			Ticker:   s.Ticker,
+		})
+		if err != nil {
+			errResponse := errors.New("unable to get stocks for user")
+			ctx.JSON(http.StatusInternalServerError, errorResponse(errResponse))
+			return
+		}
+
+		result.Stocks = append(result.Stocks, stock{
+			Ticker:         s.Ticker,
+			Quantity:       s.Quantity,
+			CurrentPrice:   price,
+			CurrentBalance: util.RoundFloat(balance),
+			PurchaseTotal:  server.getPurchasePrice(tickerTransactions),
+		})
+		result.PortfolioBalance += balance
+	}
+
+	result.PortfolioBalance = util.RoundFloat(result.PortfolioBalance)
+
+	ctx.JSON(http.StatusOK, result)
 }
 
-type stock struct {
+func (server *Server) getPurchasePrice(transactions []db.Transaction) float64 {
+	var total float64
+
+	for _, tx := range transactions {
+		total += tx.Price * float64(tx.Quantity)
+	}
+
+	return util.RoundFloat(total)
+}
+
+type tiingoStock struct {
 	AdjOpen   float64   `json:"adjOpen"`
 	AdjHigh   float64   `json:"adjHigh"`
 	AdjLow    float64   `json:"adjLow"`
@@ -43,7 +100,7 @@ func (server *Server) getStockPriceForTicker(ticker string) (float64, error) {
 	q.Add("token", server.config.TiingoToken)
 	req.URL.RawQuery = q.Encode()
 
-	var stocks []stock
+	var stocks []tiingoStock
 	err = util.MakeGetRequest(req.URL.String(), &stocks)
 	if err != nil {
 		return 0, err

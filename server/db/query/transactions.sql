@@ -26,7 +26,7 @@ LIMIT $3
 OFFSET $4;
 
 -- name: ListStockQuantitiesForUser :many
-SELECT ticker, SUM(quantity) FROM transactions
+SELECT ticker, SUM(quantity) as quantity FROM transactions
 WHERE username = $1
 GROUP BY username, ticker
 ORDER BY ticker;
