@@ -3,13 +3,14 @@ name: Deploy to AWS
 on:
   push:
     branches: [ "main" ]
+    paths: [ "server/**" ]
 
 env:
   AWS_REGION: eu-west-2
   ECR_REPOSITORY: stock_trading_simulator
   ECS_SERVICE: StockTradingSimulatorService
   ECS_CLUSTER: StockTradingSimulatorCluster
-  ECS_TASK_DEFINITION: task-definition.json
+  ECS_TASK_DEFINITION: ./server/task-definition.json
   CONTAINER_NAME: StockTradingSimulator
 
 jobs:
