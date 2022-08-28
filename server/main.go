@@ -29,7 +29,7 @@ func main() {
 	}
 	log.Println("connected to db successfully")
 
-	//runDBMigration(config.MigrationURL, config.DBSource)
+	runDBMigration(config.MigrationURL, config.DBSource)
 
 	store := db.NewStore(conn)
 	log.Println("created store successfully")
