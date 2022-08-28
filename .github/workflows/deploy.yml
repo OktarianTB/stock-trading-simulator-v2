@@ -5,6 +5,9 @@ on:
     branches: [ "main" ]
     paths: [ "server/**" ]
 
+on: workflow_dispatch
+  
+
 env:
   AWS_REGION: eu-west-2
   ECR_REPOSITORY: stock_trading_simulator
