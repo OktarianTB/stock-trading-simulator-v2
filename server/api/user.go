@@ -7,6 +7,7 @@ import (
 	"time"
 
 	db "github.com/OktarianTB/stock-trading-simulator-golang/db/sqlc"
+	"github.com/OktarianTB/stock-trading-simulator-golang/token"
 	util "github.com/OktarianTB/stock-trading-simulator-golang/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -155,5 +156,21 @@ func (server *Server) loginUser(ctx *gin.Context) {
 		RefreshTokenExpiresAt: refreshPayload.ExpiredAt,
 		User:                  newUserResponse(user),
 	}
+	ctx.JSON(http.StatusOK, rsp)
+}
+
+
+
+func (server *Server) getUser(ctx *gin.Context) {
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
+	user, err := server.store.GetUser(ctx, authPayload.Username)
+	if err != nil {
+		errResponse := errors.New("failed to get user, invalid credentials")
+		ctx.JSON(http.StatusUnauthorized, errorResponse(errResponse))
+		return
+	}
+
+	rsp := newUserResponse(user)
 	ctx.JSON(http.StatusOK, rsp)
 }
