@@ -13,7 +13,25 @@ import (
 type listTransactionsRequest struct {
 	PageID   int32  `form:"page_id" binding:"required,min=1"`
 	PageSize int32  `form:"page_size" binding:"required,min=1,max=20"`
-	Ticker   string `form:"ticker"`
+}
+
+type transaction struct {
+	Ticker      string    `json:"ticker"`
+	Price       float64   `json:"price"`
+	Quantity    int64     `json:"quantity"`
+	PurchasedAt time.Time `json:"purchased_at"`
+}
+
+func convertTransactions(transactionsDB []db.Transaction) (transactions []transaction) {
+	for _, tx := range transactionsDB {
+		transactions = append(transactions, transaction{
+			Ticker:      tx.Ticker,
+			Price:       tx.Price,
+			Quantity:    tx.Quantity,
+			PurchasedAt: tx.CreatedAt,
+		})
+	}
+	return transactions
 }
 
 func (server *Server) listTransactions(ctx *gin.Context) {
@@ -25,38 +43,20 @@ func (server *Server) listTransactions(ctx *gin.Context) {
 
 	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
 
-	if req.Ticker != "" {
-		arg := db.ListTransactionsForUserForTickerParams{
-			Username: authPayload.Username,
-			Limit:    req.PageSize,
-			Offset:   (req.PageID - 1) * req.PageSize,
-			Ticker:   req.Ticker,
-		}
-
-		transactions, err := server.store.ListTransactionsForUserForTicker(ctx, arg)
-		if err != nil {
-			errResponse := errors.New("unable to list transactions for user for ticker")
-			ctx.JSON(http.StatusInternalServerError, errorResponse(errResponse))
-			return
-		}
-
-		ctx.JSON(http.StatusOK, transactions)
-	} else {
-		arg := db.ListTransactionsForUserParams{
-			Username: authPayload.Username,
-			Limit:    req.PageSize,
-			Offset:   (req.PageID - 1) * req.PageSize,
-		}
-
-		transactions, err := server.store.ListTransactionsForUser(ctx, arg)
-		if err != nil {
-			errResponse := errors.New("unable to list transactions for user")
-			ctx.JSON(http.StatusInternalServerError, errorResponse(errResponse))
-			return
-		}
-
-		ctx.JSON(http.StatusOK, transactions)
+	arg := db.ListTransactionsForUserParams{
+		Username: authPayload.Username,
+		Limit:    req.PageSize,
+		Offset:   (req.PageID - 1) * req.PageSize,
 	}
+
+	transactions, err := server.store.ListTransactionsForUser(ctx, arg)
+	if err != nil {
+		errResponse := errors.New("unable to list transactions for user")
+		ctx.JSON(http.StatusInternalServerError, errorResponse(errResponse))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, convertTransactions(transactions))
 }
 
 type purchaseStockRequest struct {
@@ -81,7 +81,7 @@ func (server *Server) purchaseStock(ctx *gin.Context) {
 		return
 	}
 
-	tickerPrice, err := server.getStockPriceForTicker(req.Ticker)
+	tickerPrice, err := server.getStockPrice(req.Ticker)
 	if err != nil {
 		errResponse := errors.New("unable to get stock price for ticker")
 		ctx.JSON(http.StatusInternalServerError, errorResponse(errResponse))
@@ -135,7 +135,7 @@ func (server *Server) sellStock(ctx *gin.Context) {
 		return
 	}
 
-	tickerPrice, err := server.getStockPriceForTicker(req.Ticker)
+	tickerPrice, err := server.getStockPrice(req.Ticker)
 	if err != nil {
 		errResponse := errors.New("unable to get stock price for ticker")
 		ctx.JSON(http.StatusInternalServerError, errorResponse(errResponse))

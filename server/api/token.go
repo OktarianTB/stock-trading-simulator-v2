@@ -21,8 +21,8 @@ type renewAccessTokenResponse struct {
 func (server *Server) renewAccessToken(ctx *gin.Context) {
 	var req renewAccessTokenRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		errResponse := errors.New("invalid input for renewing access token")
-		ctx.JSON(http.StatusBadRequest, errorResponse(errResponse))
+		//errResponse := errors.New("invalid input for renewing access token")
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
