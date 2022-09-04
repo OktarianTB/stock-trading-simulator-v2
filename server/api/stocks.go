@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net/http"
 	"sync"
-	"time"
 
 	db "github.com/OktarianTB/stock-trading-simulator-golang/db/sqlc"
 	"github.com/OktarianTB/stock-trading-simulator-golang/token"
@@ -36,19 +35,26 @@ func (server *Server) listUserStocks(ctx *gin.Context) {
 	}
 
 	var result listUserStocksResponse
+	result.Stocks = []stock{}
+
 	wg := sync.WaitGroup{}
 
 	for _, s := range stocks {
 		wg.Add(1)
 		go func(s db.ListStockQuantitiesForUserRow) {
-			price, err := server.getStockPriceForTicker(s.Ticker)
+			if s.Quantity <= 0 {
+				wg.Done()
+				return
+			}
+
+			price, err := server.getStockPrice(s.Ticker)
 			if err != nil {
 				errResponse := errors.New("unable to get stocks for user")
 				ctx.JSON(http.StatusInternalServerError, errorResponse(errResponse))
 				return
 			}
 			balance := price * float64(s.Quantity)
-	
+
 			purchaseTotal, err := server.store.GetPurchasePriceForTicker(ctx, db.GetPurchasePriceForTickerParams{
 				Username: authPayload.Username,
 				Ticker:   s.Ticker,
@@ -58,7 +64,7 @@ func (server *Server) listUserStocks(ctx *gin.Context) {
 				ctx.JSON(http.StatusInternalServerError, errorResponse(errResponse))
 				return
 			}
-	
+
 			result.Stocks = append(result.Stocks, stock{
 				Ticker:         s.Ticker,
 				Quantity:       s.Quantity,
@@ -77,33 +83,4 @@ func (server *Server) listUserStocks(ctx *gin.Context) {
 	result.PortfolioBalance = util.RoundFloat(result.PortfolioBalance)
 
 	ctx.JSON(http.StatusOK, result)
-}
-
-type tiingoStock struct {
-	AdjOpen   float64   `json:"adjOpen"`
-	AdjHigh   float64   `json:"adjHigh"`
-	AdjLow    float64   `json:"adjLow"`
-	AdjClose  float64   `json:"adjClose"`
-	AdjVolume int64     `json:"adjVolume"`
-	Date      time.Time `json:"date"`
-}
-
-func (server *Server) getStockPriceForTicker(ticker string) (float64, error) {
-	url := server.config.TiingoAPI + "/daily/" + ticker + "/prices"
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return 0, err
-	}
-
-	q := req.URL.Query()
-	q.Add("token", server.config.TiingoToken)
-	req.URL.RawQuery = q.Encode()
-
-	var stocks []tiingoStock
-	err = util.MakeGetRequest(req.URL.String(), &stocks)
-	if err != nil {
-		return 0, err
-	}
-
-	return stocks[0].AdjClose, nil
 }
