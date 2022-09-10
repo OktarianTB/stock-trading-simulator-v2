@@ -12,6 +12,11 @@ function Stocks({ stocks }) {
 
   const roundNumber = (num) => Math.round((num + Number.EPSILON) * 100) / 100;
 
+  const getChange = (purchase, current) => {
+    const change = ((current - purchase) / purchase) * 100;
+    return roundNumber(change);
+  };
+
   const openSaleModal = (st) => {
     setStock(st);
     setSaleOpen(true);
@@ -28,6 +33,7 @@ function Stocks({ stocks }) {
             <TableCell>Purchase Total</TableCell>
             <TableCell>Current Price</TableCell>
             <TableCell align="right">Current Total</TableCell>
+            <TableCell align="right">Change</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -55,6 +61,18 @@ function Stocks({ stocks }) {
               >
                 $
                 {roundNumber(row.current_balance).toLocaleString() || '----'}
+              </TableCell>
+              <TableCell
+                align="right"
+                className={
+                  getChange(row.purchase_total, row.current_balance) >= 0
+                    ? styles.positive
+                    : styles.negative
+                    }
+              >
+                {getChange(row.purchase_total, row.current_balance) >= 0 ? '+' : '-'}
+                {getChange(row.purchase_total, row.current_balance).toLocaleString() || '----'}
+                %
               </TableCell>
             </TableRow>
           ))}
